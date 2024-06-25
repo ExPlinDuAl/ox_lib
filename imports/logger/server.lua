@@ -297,22 +297,32 @@ if service == 'discord' then
         local endpoint = webhook
 
         function lib.logger(source, event, message, ...)
+            local tags = formatTags(source, ... and string.strjoin(',', string.tostringall(...)) or nil)
+            local fields = {
+                { name = "Source", value = tostring(source), inline = true },
+                { name = "Hostname", value = hostname, inline = true },
+            }
+
+            if tags and tags ~= "" then
+                table.insert(fields, { name = "Tags", value = tags, inline = false })
+            end
+
             local payload = {
-                username = "Walteria OX Logger",
+                username = "Walteria Logger",
                 embeds = {
                     {
-                        title = event,
-                        description = message,
+                        title = tostring(event),
+                        description = tostring(message),
                         color = 16711680, -- Red color
-                        fields = {
-                            { name = "Source", value = tostring(source), inline = true },
-                            { name = "Hostname", value = hostname, inline = true },
-                            { name = "Tags", value = formatTags(source, ... and string.strjoin(',', string.tostringall(...)) or nil), inline = false },
-                        },
-                        footer = { text = cache.resource }
+                        fields = fields,
+                        footer = { text = cache.resource },
+                        timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ") -- ISO 8601 format in UTC
                     }
                 }
             }
+
+            -- Print payload for debugging
+            -- print(json.encode(payload))
 
             PerformHttpRequest(endpoint, function(status, _, _, response)
                 if status ~= 204 and status ~= 200 then
@@ -325,5 +335,6 @@ if service == 'discord' then
         end
     end
 end
+
 
 return lib.logger
