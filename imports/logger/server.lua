@@ -290,4 +290,40 @@ if service == 'loki' then
 	end
 end
 
+if service == 'discord' then
+    local webhook = GetConvar('discord:webhook', '')
+
+    if webhook ~= '' then
+        local endpoint = webhook
+
+        function lib.logger(source, event, message, ...)
+            local payload = {
+                username = "Walteria OX Logger",
+                embeds = {
+                    {
+                        title = event,
+                        description = message,
+                        color = 16711680, -- Red color
+                        fields = {
+                            { name = "Source", value = tostring(source), inline = true },
+                            { name = "Hostname", value = hostname, inline = true },
+                            { name = "Tags", value = formatTags(source, ... and string.strjoin(',', string.tostringall(...)) or nil), inline = false },
+                        },
+                        footer = { text = cache.resource }
+                    }
+                }
+            }
+
+            PerformHttpRequest(endpoint, function(status, _, _, response)
+                if status ~= 204 and status ~= 200 then
+                    if type(response) == 'string' then
+                        response = json.decode(response) or response
+                        badResponse(endpoint, status, response)
+                    end
+                end
+            end, 'POST', json.encode(payload), { ['Content-Type'] = 'application/json' })
+        end
+    end
+end
+
 return lib.logger
